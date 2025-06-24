@@ -13,6 +13,7 @@ type option struct {
 
 type Option func(*option)
 
+// LoadConfig load config
 func LoadConfig(opts ...Option) Config {
 	var cfg Config
 	opt := &option{
