@@ -3,6 +3,7 @@
 /workspace.xml
 /order_service.iml
 /vcs.xml
+/modules.xml
 # Editor-based HTTP Client requests
 /httpRequests/
 # Datasource local storage ignored files
