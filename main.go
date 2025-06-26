@@ -32,7 +32,8 @@ func main() {
 	fmt.Println("Configuration loaded successfully:", cfg)
 
 	router := gin.Default()
-	routes.SetupRoutes(router, *orderHandler, "my")
+	routes.SetupRoutes(router, *orderHandler, cfg.Secrete.JWTSecret)
+
 	_ = router.Run(":" + cfg.App.Port)
 	fmt.Println("Server running on port:", cfg.App.Port)
 }

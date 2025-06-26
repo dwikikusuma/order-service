@@ -44,7 +44,7 @@ func (h *OrderHandler) CheckOutOrder(c *gin.Context) {
 		return
 	}
 
-	param.UserID = userId
+	param.UserID = int64(userId)
 	orderId, err := h.OrderUseCase.CheckOutOrder(c.Request.Context(), &param)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

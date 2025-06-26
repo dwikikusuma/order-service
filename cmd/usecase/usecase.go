@@ -86,6 +86,12 @@ func (uc *OrderUseCase) CheckOutOrder(ctx context.Context, param *models.Checkou
 
 	// TO DO:
 	// connect payment service
+
+	// checkout order -> Done
+	// order history
+	// connect to payment service
+	// connect to product service -> validate product and validity management
+
 	return orderID, nil
 }
 
