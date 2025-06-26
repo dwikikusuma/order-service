@@ -10,4 +10,5 @@ func SetupRoutes(router *gin.Engine, orderHandler handler.OrderHandler, jwtSecre
 	router.Use(middleware.RequestLogger())
 	authMiddleware := middleware.AuthMiddleware(jwtSecret)
 	router.Use(authMiddleware)
+	router.POST("/v1/checkout", orderHandler.CheckOutOrder)
 }
