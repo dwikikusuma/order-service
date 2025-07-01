@@ -8,6 +8,7 @@ import (
 	"order_service/infra/log"
 	"order_service/infra/utils"
 	"order_service/models"
+	"strconv"
 )
 
 type OrderHandler struct {
@@ -63,4 +64,46 @@ func (h *OrderHandler) CheckOutOrder(c *gin.Context) {
 		"order_id": orderId,
 	})
 
+}
+
+func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
+	userIdF, err := utils.GetUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	userId := int64(userIdF)
+
+	statusStr := c.DefaultQuery("status", "0")
+	status, err := strconv.Atoi(statusStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid status",
+		})
+		return
+	}
+
+	param := &models.OrderHistoryParam{
+		UserID: userId,
+		Status: status,
+	}
+
+	history, err := h.OrderUseCase.GetOrderHistoryByUserId(c.Request.Context(), param)
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"param":   param,
+			"message": "error occurred on h.OrderUseCase.GetOrderHistoryByUserId(c.Request.Context(), param)",
+			"error":   err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid failed to get user history",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": history,
+	})
 }
