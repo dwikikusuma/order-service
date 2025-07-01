@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"order_service/infra/constant"
 	"order_service/infra/log"
 	"order_service/models"
 	"time"
@@ -72,7 +74,7 @@ func (r *OrderRepository) InsertOrderDetailTx(ctx context.Context, tx *gorm.DB, 
 // CheckIdempotency check idempotency
 func (r *OrderRepository) CheckIdempotency(ctx context.Context, idempotencyKey string) (bool, error) {
 	var reqLog models.OrderRequestLog
-	err := r.Database.WithContext(ctx).Table("order_request_log").First(reqLog, "idempotency_key = ?", idempotencyKey).Error
+	err := r.Database.WithContext(ctx).Table("order_request_log").First(reqLog, "idempotency_token = ?", idempotencyKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -98,4 +100,50 @@ func (r *OrderRepository) SaveIdempotency(ctx context.Context, idempotencyKey st
 		return err
 	}
 	return nil
+}
+
+func (r *OrderRepository) GetOrderHistoryByUserId(ctx context.Context, param *models.OrderHistoryParam) ([]models.OrderHistoryResponse, error) {
+
+	var queryResult []models.OrderHistoryResult
+	query := r.Database.WithContext(ctx).Table("orders as o").Select("o.id, o.total_qty, o.amount, o.status, o.payment_method, o.shipping_address. od.products, od.order_history").
+		Joins("order_detail as od ON od.id = o.order_detail_id").
+		Where("o.user_id = ?", param.UserID)
+
+	if param.Status > 0 {
+		query.Where("o.status = ?", param.Status)
+	}
+
+	err := query.Order("o.id DESC").Scan(&queryResult).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var results []models.OrderHistoryResponse
+	for _, result := range queryResult {
+		var products []models.CheckoutItem
+		var history []models.StatusHistory
+
+		err = json.Unmarshal([]byte(result.Products), &products)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(result.History), &history)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, models.OrderHistoryResponse{
+			OrderID:         result.ID,
+			TotalAmount:     result.Amount,
+			TotalQty:        result.TotalQty,
+			Status:          constant.OrderStatusTranslated[result.Status],
+			PaymentMethod:   result.PaymentMethod,
+			ShippingAddress: result.ShippingAddress,
+			Products:        products,
+			History:         history,
+		})
+	}
+
+	return results, nil
 }

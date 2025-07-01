@@ -66,3 +66,11 @@ func (s *OrderService) SaveOrderAndOrderDetail(ctx context.Context, order *model
 
 	return orderID, nil
 }
+
+func (s *OrderService) GetOrderHistoryByUserId(ctx context.Context, param *models.OrderHistoryParam) ([]models.OrderHistoryResponse, error) {
+	orderHistory, err := s.OrderRepository.GetOrderHistoryByUserId(ctx, param)
+	if err != nil {
+		return nil, err
+	}
+	return orderHistory, nil
+}
