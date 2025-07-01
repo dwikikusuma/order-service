@@ -59,3 +59,14 @@ type StatusHistory struct {
 	Status    string `json:"status"`
 	Timestamp string `json:"timestamp"`
 }
+
+type OrderHistoryResult struct {
+	ID              int64 `gorm:"column:id"`
+	Amount          float64
+	TotalQty        int
+	Status          int
+	PaymentMethod   string
+	ShippingAddress string
+	Products        string `gorm:"column:products"`
+	History         string `gorm:"column:order_history"`
+}
