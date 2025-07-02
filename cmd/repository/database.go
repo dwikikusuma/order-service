@@ -73,8 +73,8 @@ func (r *OrderRepository) InsertOrderDetailTx(ctx context.Context, tx *gorm.DB, 
 
 // CheckIdempotency check idempotency
 func (r *OrderRepository) CheckIdempotency(ctx context.Context, idempotencyKey string) (bool, error) {
-	var reqLog models.OrderRequestLog
-	err := r.Database.WithContext(ctx).Table("order_request_log").First(reqLog, "idempotency_token = ?", idempotencyKey).Error
+	var reqLog *models.OrderRequestLog
+	err := r.Database.WithContext(ctx).Table("order_request_log").First(&reqLog, "idempotency_token = ?", idempotencyKey).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -105,8 +105,19 @@ func (r *OrderRepository) SaveIdempotency(ctx context.Context, idempotencyKey st
 func (r *OrderRepository) GetOrderHistoryByUserId(ctx context.Context, param *models.OrderHistoryParam) ([]models.OrderHistoryResponse, error) {
 
 	var queryResult []models.OrderHistoryResult
-	query := r.Database.WithContext(ctx).Table("orders as o").Select("o.id, o.total_qty, o.amount, o.status, o.payment_method, o.shipping_address. od.products, od.order_history").
-		Joins("order_detail as od ON od.id = o.order_detail_id").
+
+	query := r.Database.WithContext(ctx).
+		Table("orders AS o").
+		Select(`
+		o.id, 
+		o.total_qty, 
+		o.amount, 
+		o.status, 
+		o.payment_method, 
+		o.shipping_address, 
+		od.products, 
+		od.order_history`).
+		Joins("JOIN order_detail AS od ON od.id = o.order_detail_id").
 		Where("o.user_id = ?", param.UserID)
 
 	if param.Status > 0 {
