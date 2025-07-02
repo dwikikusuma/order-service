@@ -97,7 +97,7 @@ func (h *OrderHandler) GetOrderHistory(c *gin.Context) {
 			"message": "error occurred on h.OrderUseCase.GetOrderHistoryByUserId(c.Request.Context(), param)",
 			"error":   err.Error(),
 		})
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "invalid failed to get user history",
 		})
 		return
