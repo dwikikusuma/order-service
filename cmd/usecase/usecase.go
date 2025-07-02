@@ -8,17 +8,20 @@ import (
 	"order_service/cmd/service"
 	"order_service/infra/constant"
 	"order_service/infra/log"
+	"order_service/kafka"
 	"order_service/models"
 	"time"
 )
 
 type OrderUseCase struct {
-	OrderService service.OrderService
+	OrderService  service.OrderService
+	KafkaProducer kafka.KafkaProducer
 }
 
-func NewOrderUseCase(orderService service.OrderService) *OrderUseCase {
+func NewOrderUseCase(orderService service.OrderService, kafkaProducer kafka.KafkaProducer) *OrderUseCase {
 	return &OrderUseCase{
-		OrderService: orderService,
+		OrderService:  orderService,
+		KafkaProducer: kafkaProducer,
 	}
 }
 
@@ -86,7 +89,21 @@ func (uc *OrderUseCase) CheckOutOrder(ctx context.Context, param *models.Checkou
 
 	// TO DO:
 	// connect payment service
+	err := uc.KafkaProducer.PublishOrderCreated(ctx, &models.OrderCreatedEvent{
+		OrderID:         orderID,
+		UserID:          param.UserID,
+		TotalAmount:     totalAmount,
+		PaymentMethod:   param.PaymentMethod,
+		ShippingAddress: param.ShippingAddress,
+	})
 
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"err":     err.Error(),
+			"message": "failed to create order event on uc.KafkaProducer.PublishOrderCreated",
+		})
+		return 0, err
+	}
 	// checkout order -> Done
 	// order history
 	// connect to payment service
