@@ -89,7 +89,7 @@ func (uc *OrderUseCase) CheckOutOrder(ctx context.Context, param *models.Checkou
 
 	// TO DO:
 	// connect payment service
-	err := uc.KafkaProducer.PublishOrderCreated(ctx, &models.OrderCreatedEvent{
+	err := uc.KafkaProducer.PublishOrderCreated(ctx, models.OrderCreatedEvent{
 		OrderID:         orderID,
 		UserID:          param.UserID,
 		TotalAmount:     totalAmount,
