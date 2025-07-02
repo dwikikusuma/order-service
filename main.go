@@ -10,6 +10,7 @@ import (
 	"order_service/cmd/usecase"
 	"order_service/config"
 	"order_service/infra/log"
+	"order_service/kafka"
 	"order_service/routes"
 )
 
@@ -23,10 +24,11 @@ func main() {
 
 	db := resource.InitDB(&cfg)
 	redis := resource.InitRedis(&cfg)
+	kafkaProducer := kafka.NewKafkaProducer([]string{"localhost:9093"}, "order.created")
 
 	orderRepo := repository.NewOrderRepository(db, redis)
 	orderService := service.NewOrderService(*orderRepo)
-	orderUseCase := usecase.NewOrderUseCase(*orderService)
+	orderUseCase := usecase.NewOrderUseCase(*orderService, *kafkaProducer)
 	orderHandler := handler.NewHandler(*orderUseCase)
 
 	fmt.Println("Configuration loaded successfully:", cfg)
