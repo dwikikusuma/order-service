@@ -34,13 +34,13 @@ func (s *OrderService) CheckIdempotency(ctx context.Context, idempotencyKey stri
 }
 
 // SaveIdempotency save idempotency
-func (s *OrderService) SaveIdempotency(ctx context.Context, idempotencyKey string) error {
-	err := s.OrderRepository.SaveIdempotency(ctx, idempotencyKey)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+//func (s *OrderService) SaveIdempotency(ctx context.Context, idempotencyKey string) error {
+//	err := s.OrderRepository.SaveIdempotency(ctx, idempotencyKey)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 // SaveOrderAndOrderDetail save order and order_detail
 func (s *OrderService) SaveOrderAndOrderDetail(ctx context.Context, order *models.Order, orderDetail *models.OrderDetail, idempotencyToken string, producer kafka.KafkaProducer) (int64, error) {
@@ -65,7 +65,7 @@ func (s *OrderService) SaveOrderAndOrderDetail(ctx context.Context, order *model
 
 		// Save Idempotency Token into the database
 		if idempotencyToken != "" {
-			err := s.SaveIdempotency(ctx, idempotencyToken)
+			err = s.OrderRepository.SaveIdempotencyTx(ctx, tx, idempotencyToken)
 			if err != nil {
 				return err
 			}
