@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 	"log"
 )
@@ -43,7 +44,7 @@ func LoadConfig(opts ...Option) Config {
 	if err != nil {
 		log.Fatalf("failed to unmarshal config: %s", err)
 	}
-
+	fmt.Printf("Loaded Config: %+v\n", cfg)
 	return cfg
 }
 
