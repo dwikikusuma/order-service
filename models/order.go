@@ -20,9 +20,9 @@ type OrderDetail struct {
 }
 
 type CheckoutItem struct {
-	ProductID int64   `json:"product_id"`
-	Quantity  int64   `json:"quantity"`
-	Price     float64 `json:"price"`
+	ProductID int64 `json:"product_id"`
+	Quantity  int64 `json:"quantity"`
+	Price     float64
 }
 
 type CheckoutRequest struct {
