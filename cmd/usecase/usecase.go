@@ -109,7 +109,7 @@ func (uc *OrderUseCase) calculateOrderSummary(items []models.CheckoutItem) (int6
 
 	for _, item := range items {
 		totalQty += item.Quantity
-		totalAmount += item.Price
+		totalAmount += item.Price * float64(item.Quantity)
 	}
 	return totalQty, totalAmount
 }
