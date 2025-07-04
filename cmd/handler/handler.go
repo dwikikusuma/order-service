@@ -50,6 +50,7 @@ func (h *OrderHandler) CheckOutOrder(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "failed to checkout order",
+			"err":     err.Error(),
 		})
 
 		log.Logger.WithFields(logrus.Fields{

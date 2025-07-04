@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm/logger"
 	"log"
 	"order_service/config"
+	custLog "order_service/infra/log"
 )
 
 func InitDB(cfg *config.Config) *gorm.DB {
@@ -22,7 +23,6 @@ func InitDB(cfg *config.Config) *gorm.DB {
 	if err != nil {
 		log.Fatalf("failed to connect with db %s", err)
 	}
-
-	log.Print("connected with db")
+	custLog.Logger.Info("DB CONNECTED")
 	return db
 }

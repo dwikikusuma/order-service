@@ -6,6 +6,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"log"
 	"order_service/config"
+	custLog "order_service/infra/log"
 )
 
 func InitRedis(cfg *config.Config) *redis.Client {
@@ -19,6 +20,6 @@ func InitRedis(cfg *config.Config) *redis.Client {
 	if err != nil {
 		log.Fatalf("failed to connect with reds %s", err)
 	}
-	log.Print("Connected with redis")
+	custLog.Logger.Info("Connected with redis")
 	return redisClient
 }

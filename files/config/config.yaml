@@ -15,3 +15,6 @@ redis:
 
 secrete:
   jwtsecret: "secret"
+
+product_service:
+  host: http://localhost:9020

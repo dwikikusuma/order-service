@@ -100,3 +100,12 @@ func (s *OrderService) GetOrderHistoryByUserId(ctx context.Context, param *model
 	}
 	return orderHistory, nil
 }
+
+func (s *OrderService) GetProductInfo(ctx context.Context, productId int64) (models.Product, error) {
+	productDetail, err := s.OrderRepository.GetProductInfo(ctx, productId)
+	if err != nil {
+		return models.Product{}, err
+	}
+
+	return productDetail, nil
+}

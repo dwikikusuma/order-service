@@ -26,12 +26,10 @@ func main() {
 	redis := resource.InitRedis(&cfg)
 	kafkaProducer := kafka.NewKafkaProducer([]string{"localhost:9093"}, "order.created")
 
-	orderRepo := repository.NewOrderRepository(db, redis)
+	orderRepo := repository.NewOrderRepository(db, redis, cfg.ProductService.Host)
 	orderService := service.NewOrderService(*orderRepo)
 	orderUseCase := usecase.NewOrderUseCase(*orderService, *kafkaProducer)
 	orderHandler := handler.NewHandler(*orderUseCase)
-
-	fmt.Println("Configuration loaded successfully:", cfg)
 
 	router := gin.Default()
 	routes.SetupRoutes(router, *orderHandler, cfg.Secrete.JWTSecret)
