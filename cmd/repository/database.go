@@ -102,6 +102,23 @@ func (r *OrderRepository) SaveIdempotency(ctx context.Context, idempotencyKey st
 	return nil
 }
 
+func (r *OrderRepository) SaveIdempotencyTx(ctx context.Context, tx *gorm.DB, idempotencyKey string) error {
+	orderLog := models.OrderRequestLog{
+		IdempotencyToken: idempotencyKey,
+		CreateTime:       time.Now(),
+	}
+
+	err := tx.WithContext(ctx).Table("order_request_log").Create(&orderLog).Error
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"message": fmt.Sprintf("error occured on r.Database.WithContext(ctx).Table(\"order_request_log\").Create(&orderLog).Error"),
+			"error":   err,
+		})
+		return err
+	}
+	return nil
+}
+
 func (r *OrderRepository) GetOrderHistoryByUserId(ctx context.Context, param *models.OrderHistoryParam) ([]models.OrderHistoryResponse, error) {
 
 	var queryResult []models.OrderHistoryResult
@@ -157,4 +174,41 @@ func (r *OrderRepository) GetOrderHistoryByUserId(ctx context.Context, param *mo
 	}
 
 	return results, nil
+}
+
+func (r *OrderRepository) DeleteOrder(ctx context.Context, orderID int64) error {
+	err := r.Database.WithContext(ctx).Table("orders").Where("id = ?", orderID).Delete(nil).Error
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"err":      err.Error(),
+			"order_id": orderID,
+		}).Error("Failed to delete order")
+		return err
+	}
+	return nil
+}
+
+func (r *OrderRepository) DeleteOrderDetails(ctx context.Context, orderDetailID int64) error {
+	err := r.Database.WithContext(ctx).Table("order_details").Where("id = ?", orderDetailID).Delete(nil).Error
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"err":             err.Error(),
+			"order_detail_id": orderDetailID,
+		}).Error("Failed to delete order detail")
+		return err
+	}
+	return nil
+}
+
+func (r *OrderRepository) DeleteIdempToken(ctx context.Context, idempotencyKey int64) error {
+	err := r.Database.WithContext(ctx).Table("order_request_log").
+		Where("idempotency_token = ?", idempotencyKey).Delete(nil).Error
+	if err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"err":             err.Error(),
+			"idempotency_key": idempotencyKey,
+		}).Error("Failed to delete idempotency token")
+		return err
+	}
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"order_service/cmd/service"
 	"order_service/infra/constant"
@@ -26,29 +27,30 @@ func NewOrderUseCase(orderService service.OrderService, kafkaProducer kafka.Kafk
 }
 
 func (uc *OrderUseCase) CheckOutOrder(ctx context.Context, param *models.CheckoutRequest) (int64, error) {
-	var orderID int64
-
-	// check idempotency
 	if param.IdempotencyToken != "" {
 		isExists, err := uc.OrderService.CheckIdempotency(ctx, param.IdempotencyToken)
 		if err != nil {
+			log.Logger.WithFields(logrus.Fields{
+				"idempotencyToken": param.IdempotencyToken,
+				"error":            err,
+			}).Error("Error checking idempotency")
 			return 0, err
 		}
 
 		if isExists {
-			return 0, errors.New("order already processed")
+			return 0, fmt.Errorf("order with idempotency token '%s' already processed", param.IdempotencyToken)
 		}
 	}
 
 	// validate products
 	if err := uc.validateProducts(param.Items); err != nil {
+		log.Logger.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("Error validating products")
 		return 0, err
 	}
 
-	// calculate product amount
 	totalQty, totalAmount := uc.calculateOrderSummary(param.Items)
-
-	// construct order and order detail
 	products, orderHistory := uc.constructOrderDetail(param.Items)
 
 	orderDetail := &models.OrderDetail{
@@ -65,49 +67,11 @@ func (uc *OrderUseCase) CheckOutOrder(ctx context.Context, param *models.Checkou
 		ShippingAddress: param.ShippingAddress,
 	}
 
-	// save order and order detail
-	orderID, insertErr := uc.OrderService.SaveOrderAndOrderDetail(ctx, order, orderDetail)
-	if insertErr != nil {
-		log.Logger.WithFields(logrus.Fields{
-			"message": "error occurred on uc.OrderService.SaveOrderAndOrderDetail",
-			"error":   insertErr,
-		}).Info("failed to save order and order detail")
-		return 0, insertErr
-	}
-
-	// save idempotency
-	if param.IdempotencyToken != "" {
-		err := uc.OrderService.SaveIdempotency(ctx, param.IdempotencyToken)
-		if err != nil {
-			log.Logger.WithFields(logrus.Fields{
-				"idempotency": param.IdempotencyToken,
-				"error":       err,
-			}).Info("error occurred on uc.OrderService.SaveIdempotency")
-			return 0, err
-		}
-	}
-
-	// TO DO:
-	// connect payment service
-	err := uc.KafkaProducer.PublishOrderCreated(ctx, models.OrderCreatedEvent{
-		OrderID:         orderID,
-		UserID:          param.UserID,
-		TotalAmount:     totalAmount,
-		PaymentMethod:   param.PaymentMethod,
-		ShippingAddress: param.ShippingAddress,
-	})
-
+	// Save order and order detail, and handle idempotency token and Kafka event
+	orderID, err := uc.OrderService.SaveOrderAndOrderDetail(ctx, order, orderDetail, param.IdempotencyToken, uc.KafkaProducer)
 	if err != nil {
-		log.Logger.WithFields(logrus.Fields{
-			"err":     err.Error(),
-			"message": "failed to create order event on uc.KafkaProducer.PublishOrderCreated",
-		})
 		return 0, err
 	}
-	// checkout order -> Done
-	// order history
-	// connect to payment service
-	// connect to product service -> validate product and validity management
 
 	return orderID, nil
 }
